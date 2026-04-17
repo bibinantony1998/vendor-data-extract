@@ -26,9 +26,10 @@ const statusMessage = document.getElementById('statusMessage');
 const workflowScreen = document.getElementById('workflowScreen');
 const dashboardScreen = document.getElementById('dashboardScreen');
 const summaryVendors = document.getElementById('summaryVendors');
+const summaryRows = document.getElementById('summaryRows');
 const summaryApproved = document.getElementById('summaryApproved');
 const summaryRejected = document.getElementById('summaryRejected');
-const summaryInvalid = document.getElementById('summaryInvalid');
+const summaryApprovalPercentage = document.getElementById('summaryApprovalPercentage');
 const reportTableBody = document.getElementById('reportTableBody');
 const reportChartCanvas = document.getElementById('reportChart');
 const downloadReportBtn = document.getElementById('downloadReportBtn');
@@ -39,6 +40,7 @@ let editingVendorId = null;
 let savedVendorsSnapshot = '';
 let currentReport = null;
 let reportChart = null;
+const STATUS_KEYS = ['APPR', 'NEW', 'COM_APPR', 'REJ', 'ON_HOLD', 'EMPTY'];
 
 const plusIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>`;
 const tickIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.75-3.75a1 1 0 111.414-1.414l3.043 3.043 6.543-6.543a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>`;
@@ -103,11 +105,22 @@ function normalizeHeader(value) {
 }
 
 function normalizeStatus(value) {
-    const text = String(value || '').trim().toLowerCase();
-    if (!text) return 'invalid';
-    if (text.includes('approve')) return 'approved';
-    if (text.includes('reject')) return 'rejected';
-    return 'invalid';
+    const raw = String(value || '').trim();
+    if (!raw) return 'EMPTY';
+
+    const normalized = raw
+        .toUpperCase()
+        .replace(/[\s-]+/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_+|_+$/g, '');
+
+    if (normalized === 'REJ' || normalized === 'REJECT' || normalized === 'REJECTED') return 'REJ';
+    if (normalized === 'APPR' || normalized === 'APPROVED') return 'APPR';
+    if (normalized === 'NEW') return 'NEW';
+    if (normalized === 'COM_APPR' || normalized === 'COMAPPROVED' || normalized === 'COM_APPROVED') return 'COM_APPR';
+    if (normalized === 'ON_HOLD' || normalized === 'ONHOLD' || normalized === 'HOLD') return 'ON_HOLD';
+    if (STATUS_KEYS.includes(normalized)) return normalized;
+    return 'EMPTY';
 }
 
 function showDashboard(report) {
@@ -125,18 +138,22 @@ function showWorkflow() {
 
 function renderDashboard(report) {
     summaryVendors.textContent = String(report.vendorRows.length);
+    summaryRows.textContent = String(report.totals.total);
     summaryApproved.textContent = String(report.totals.approved);
     summaryRejected.textContent = String(report.totals.rejected);
-    summaryInvalid.textContent = String(report.totals.invalid);
+    summaryApprovalPercentage.textContent = `${report.totals.approvalPercentage}%`;
 
     reportTableBody.innerHTML = report.vendorRows.map(row => `
         <tr>
             <td class="px-4 py-3 text-gray-100">${row.vendor}</td>
             <td class="px-4 py-3 text-gray-200">${row.total}</td>
-            <td class="px-4 py-3 text-green-300">${row.approved}</td>
-            <td class="px-4 py-3 text-red-300">${row.rejected}</td>
-            <td class="px-4 py-3 text-amber-300">${row.invalid}</td>
             <td class="px-4 py-3 ${getApprovalColorClass(row.approvalPercentage)} font-semibold">${row.approvalPercentage}%</td>
+            <td class="px-4 py-3 text-green-300">${row.APPR}</td>
+            <td class="px-4 py-3 text-cyan-300">${row.NEW}</td>
+            <td class="px-4 py-3 text-blue-300">${row.COM_APPR}</td>
+            <td class="px-4 py-3 text-red-300">${row.REJ}</td>
+            <td class="px-4 py-3 text-amber-300">${row.ON_HOLD}</td>
+            <td class="px-4 py-3 text-gray-300">${row.EMPTY}</td>
         </tr>
     `).join('');
 
@@ -161,19 +178,52 @@ function renderReportChart(rows) {
             labels: rows.map(r => r.vendor),
             datasets: [
                 {
-                    label: 'Approved',
-                    data: rows.map(r => r.approved),
-                    backgroundColor: 'rgba(34, 197, 94, 0.7)'
+                    label: 'APPR',
+                    data: rows.map(r => r.APPR),
+                    backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                    borderRadius: 4,
+                    barPercentage: 0.9,
+                    categoryPercentage: 0.85
                 },
                 {
-                    label: 'Rejected',
-                    data: rows.map(r => r.rejected),
-                    backgroundColor: 'rgba(239, 68, 68, 0.7)'
+                    label: 'NEW',
+                    data: rows.map(r => r.NEW),
+                    backgroundColor: 'rgba(6, 182, 212, 0.7)',
+                    borderRadius: 4,
+                    barPercentage: 0.9,
+                    categoryPercentage: 0.85
                 },
                 {
-                    label: 'Invalid',
-                    data: rows.map(r => r.invalid),
-                    backgroundColor: 'rgba(245, 158, 11, 0.7)'
+                    label: 'COM_APPR',
+                    data: rows.map(r => r.COM_APPR),
+                    backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                    borderRadius: 4,
+                    barPercentage: 0.9,
+                    categoryPercentage: 0.85
+                },
+                {
+                    label: 'REJ',
+                    data: rows.map(r => r.REJ),
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                    borderRadius: 4,
+                    barPercentage: 0.9,
+                    categoryPercentage: 0.85
+                },
+                {
+                    label: 'ON_HOLD',
+                    data: rows.map(r => r.ON_HOLD),
+                    backgroundColor: 'rgba(245, 158, 11, 0.7)',
+                    borderRadius: 4,
+                    barPercentage: 0.9,
+                    categoryPercentage: 0.85
+                },
+                {
+                    label: 'EMPTY',
+                    data: rows.map(r => r.EMPTY),
+                    backgroundColor: 'rgba(148, 163, 184, 0.7)',
+                    borderRadius: 4,
+                    barPercentage: 0.9,
+                    categoryPercentage: 0.85
                 }
             ]
         },
@@ -182,7 +232,17 @@ function renderReportChart(rows) {
             maintainAspectRatio: false,
             scales: {
                 x: {
-                    ticks: { color: '#cbd5e1' },
+                    ticks: {
+                        color: '#cbd5e1',
+                        autoSkip: false,
+                        maxRotation: 0,
+                        minRotation: 0,
+                        callback(value, index) {
+                            const label = this.getLabelForValue(value);
+                            if (!label) return '';
+                            return label.length > 16 ? `${label.slice(0, 16)}...` : label;
+                        }
+                    },
                     grid: { color: 'rgba(148, 163, 184, 0.1)' }
                 },
                 y: {
@@ -194,6 +254,13 @@ function renderReportChart(rows) {
             plugins: {
                 legend: {
                     labels: { color: '#e2e8f0' }
+                },
+                tooltip: {
+                    callbacks: {
+                        title(items) {
+                            return items?.[0]?.label || '';
+                        }
+                    }
                 }
             }
         }
@@ -331,24 +398,28 @@ downloadReportBtn.addEventListener('click', async () => {
 
     try {
         const reportRows = [
-            ['Vendor', 'Total', 'Approved', 'Rejected', 'Invalid', 'Approval %'],
+            ['Vendor', 'Total', 'Approval %', 'APPR', 'NEW', 'COM_APPR', 'REJ', 'ON_HOLD', 'EMPTY'],
             ...currentReport.vendorRows.map(row => ([
                 row.vendor,
                 row.total,
-                row.approved,
-                row.rejected,
-                row.invalid,
-                Number(row.approvalPercentage)
+                Number(row.approvalPercentage),
+                row.APPR,
+                row.NEW,
+                row.COM_APPR,
+                row.REJ,
+                row.ON_HOLD,
+                row.EMPTY
             ]))
         ];
 
         const totalsRows = [
-            ['Total Vendors', 'Total Approved', 'Total Rejected', 'Total Invalid'],
+            ['Total Vendors', 'Total Rows', 'Total Approved', 'Total REJ', 'Approval %'],
             [
                 currentReport.vendorRows.length,
+                currentReport.totals.total,
                 currentReport.totals.approved,
                 currentReport.totals.rejected,
-                currentReport.totals.invalid
+                Number(currentReport.totals.approvalPercentage)
             ]
         ];
 
@@ -483,7 +554,13 @@ convertBtn.addEventListener('click', async () => {
             throw new Error('Could not find "Supplier Name" column in Excel header.');
         }
 
-        let statusColIdx = headerRow.findIndex(cell => normalizeHeader(cell) === 'supplier sample status');
+        let statusColIdx = headerRow.findIndex(cell => normalizeHeader(cell) === 'sample status');
+        if (statusColIdx === -1) {
+            statusColIdx = headerRow.findIndex(cell => normalizeHeader(cell).includes('sample status'));
+        }
+        if (statusColIdx === -1) {
+            statusColIdx = headerRow.findIndex(cell => normalizeHeader(cell) === 'supplier sample status');
+        }
         if (statusColIdx === -1) {
             statusColIdx = headerRow.findIndex(cell => normalizeHeader(cell).includes('supplier sample status'));
         }
@@ -502,9 +579,14 @@ convertBtn.addEventListener('click', async () => {
             reportMap[v.display] = {
                 vendor: v.display,
                 total: 0,
+                APPR: 0,
+                NEW: 0,
+                COM_APPR: 0,
+                REJ: 0,
+                ON_HOLD: 0,
+                EMPTY: 0,
                 approved: 0,
                 rejected: 0,
-                invalid: 0,
                 approvalPercentage: 0
             };
         });
@@ -524,7 +606,14 @@ convertBtn.addEventListener('click', async () => {
                     splitData[matchedDisplay].push(row);
                     const normalized = normalizeStatus(row[statusColIdx]);
                     reportMap[matchedDisplay].total += 1;
-                    reportMap[matchedDisplay][normalized] += 1;
+                    if (STATUS_KEYS.includes(normalized)) {
+                        reportMap[matchedDisplay][normalized] += 1;
+                    }
+                    if (normalized === 'REJ') {
+                        reportMap[matchedDisplay].rejected += 1;
+                    } else {
+                        reportMap[matchedDisplay].approved += 1;
+                    }
                     matchCount++;
                 }
             }
@@ -564,11 +653,12 @@ convertBtn.addEventListener('click', async () => {
             .sort((a, b) => b.total - a.total);
 
         const totals = vendorRows.reduce((acc, row) => {
+            acc.total += row.total;
             acc.approved += row.approved;
             acc.rejected += row.rejected;
-            acc.invalid += row.invalid;
             return acc;
-        }, { approved: 0, rejected: 0, invalid: 0 });
+        }, { total: 0, approved: 0, rejected: 0 });
+        totals.approvalPercentage = totals.total > 0 ? ((totals.approved / totals.total) * 100).toFixed(1) : '0.0';
 
         // 6. Write Data (Native file system or Fallback)
         showStatus('Finalizing Download...');

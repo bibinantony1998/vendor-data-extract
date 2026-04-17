@@ -104,7 +104,7 @@
                 class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 pb-2">
                 Vendor Data Extractor
             </h1>
-            <p class="text-gray-400 text-lg">Easily split your master PLM sheet into vendor-specific files automatically
+            <p class="text-gray-400 text-lg">Works 100% offline after the first load. Your data stays private on your device.
             </p>
         </header>
 
@@ -224,22 +224,26 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
                 <div class="bg-slate-800/70 border border-slate-600/50 rounded-lg p-4">
                     <p class="text-xs text-gray-400 uppercase tracking-wider">Total Vendors</p>
                     <p id="summaryVendors" class="text-2xl font-bold text-white mt-1">0</p>
                 </div>
                 <div class="bg-slate-800/70 border border-slate-600/50 rounded-lg p-4">
-                    <p class="text-xs text-gray-400 uppercase tracking-wider">Approvals</p>
-                    <p id="summaryApproved" class="text-2xl font-bold text-green-400 mt-1">0</p>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Total Rows</p>
+                    <p id="summaryRows" class="text-2xl font-bold text-white mt-1">0</p>
                 </div>
                 <div class="bg-slate-800/70 border border-slate-600/50 rounded-lg p-4">
-                    <p class="text-xs text-gray-400 uppercase tracking-wider">Rejections</p>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Total REJ</p>
                     <p id="summaryRejected" class="text-2xl font-bold text-red-400 mt-1">0</p>
                 </div>
                 <div class="bg-slate-800/70 border border-slate-600/50 rounded-lg p-4">
-                    <p class="text-xs text-gray-400 uppercase tracking-wider">Invalid Status</p>
-                    <p id="summaryInvalid" class="text-2xl font-bold text-amber-400 mt-1">0</p>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Total Approved</p>
+                    <p id="summaryApproved" class="text-2xl font-bold text-green-400 mt-1">0</p>
+                </div>
+                <div class="bg-slate-800/70 border border-slate-600/50 rounded-lg p-4">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Approval %</p>
+                    <p id="summaryApprovalPercentage" class="text-2xl font-bold text-blue-300 mt-1">0%</p>
                 </div>
             </div>
 
@@ -248,15 +252,21 @@
             </div>
 
             <div class="overflow-x-auto rounded-xl border border-slate-700/50">
+                <p class="px-4 py-3 text-xs text-gray-300 bg-slate-900/60 border-b border-slate-700/50">
+                    Approval % rule: all statuses other than <span class="text-red-300 font-semibold">REJ</span> are considered approved.
+                </p>
                 <table class="min-w-full text-sm">
                     <thead class="bg-slate-900/70 text-gray-300">
                         <tr>
                             <th class="px-4 py-3 text-left font-semibold">Vendor</th>
                             <th class="px-4 py-3 text-left font-semibold">Total</th>
-                            <th class="px-4 py-3 text-left font-semibold">Approval</th>
-                            <th class="px-4 py-3 text-left font-semibold">Rejection</th>
-                            <th class="px-4 py-3 text-left font-semibold">Invalid</th>
                             <th class="px-4 py-3 text-left font-semibold">Approval %</th>
+                            <th class="px-4 py-3 text-left font-semibold">APPR</th>
+                            <th class="px-4 py-3 text-left font-semibold">NEW</th>
+                            <th class="px-4 py-3 text-left font-semibold">COM_APPR</th>
+                            <th class="px-4 py-3 text-left font-semibold">REJ</th>
+                            <th class="px-4 py-3 text-left font-semibold">ON_HOLD</th>
+                            <th class="px-4 py-3 text-left font-semibold">EMPTY</th>
                         </tr>
                     </thead>
                     <tbody id="reportTableBody" class="divide-y divide-slate-700/50 bg-slate-800/30">
