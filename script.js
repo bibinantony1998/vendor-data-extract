@@ -23,10 +23,22 @@ const saveVendorsBtn = document.getElementById('saveVendorsBtn');
 const newDisplayInput = document.getElementById('newDisplay');
 const newExactInput = document.getElementById('newExact');
 const statusMessage = document.getElementById('statusMessage');
+const workflowScreen = document.getElementById('workflowScreen');
+const dashboardScreen = document.getElementById('dashboardScreen');
+const summaryVendors = document.getElementById('summaryVendors');
+const summaryApproved = document.getElementById('summaryApproved');
+const summaryRejected = document.getElementById('summaryRejected');
+const summaryInvalid = document.getElementById('summaryInvalid');
+const reportTableBody = document.getElementById('reportTableBody');
+const reportChartCanvas = document.getElementById('reportChart');
+const downloadReportBtn = document.getElementById('downloadReportBtn');
+const convertAnotherBtn = document.getElementById('convertAnotherBtn');
 
 let selectedFile = null;
 let editingVendorId = null;
 let savedVendorsSnapshot = '';
+let currentReport = null;
+let reportChart = null;
 
 const plusIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>`;
 const tickIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.75-3.75a1 1 0 111.414-1.414l3.043 3.043 6.543-6.543a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>`;
@@ -84,6 +96,108 @@ function hasUnsavedVendorChanges() {
 function setAddButtonMode(isEditing) {
     addVendorBtn.innerHTML = isEditing ? tickIcon : plusIcon;
     addVendorBtn.title = isEditing ? 'Update Vendor' : 'Add Vendor';
+}
+
+function normalizeHeader(value) {
+    return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function normalizeStatus(value) {
+    const text = String(value || '').trim().toLowerCase();
+    if (!text) return 'invalid';
+    if (text.includes('approve')) return 'approved';
+    if (text.includes('reject')) return 'rejected';
+    return 'invalid';
+}
+
+function showDashboard(report) {
+    currentReport = report;
+    workflowScreen.classList.add('hidden');
+    dashboardScreen.classList.remove('hidden');
+    renderDashboard(report);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showWorkflow() {
+    dashboardScreen.classList.add('hidden');
+    workflowScreen.classList.remove('hidden');
+}
+
+function renderDashboard(report) {
+    summaryVendors.textContent = String(report.vendorRows.length);
+    summaryApproved.textContent = String(report.totals.approved);
+    summaryRejected.textContent = String(report.totals.rejected);
+    summaryInvalid.textContent = String(report.totals.invalid);
+
+    reportTableBody.innerHTML = report.vendorRows.map(row => `
+        <tr>
+            <td class="px-4 py-3 text-gray-100">${row.vendor}</td>
+            <td class="px-4 py-3 text-gray-200">${row.total}</td>
+            <td class="px-4 py-3 text-green-300">${row.approved}</td>
+            <td class="px-4 py-3 text-red-300">${row.rejected}</td>
+            <td class="px-4 py-3 text-amber-300">${row.invalid}</td>
+            <td class="px-4 py-3 ${getApprovalColorClass(row.approvalPercentage)} font-semibold">${row.approvalPercentage}%</td>
+        </tr>
+    `).join('');
+
+    renderReportChart(report.vendorRows);
+}
+
+function getApprovalColorClass(percentage) {
+    const value = Number(percentage);
+    if (value >= 50) return 'text-green-300';
+    if (value >= 25) return 'text-amber-300';
+    return 'text-red-300';
+}
+
+function renderReportChart(rows) {
+    if (reportChart) {
+        reportChart.destroy();
+    }
+
+    reportChart = new Chart(reportChartCanvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: rows.map(r => r.vendor),
+            datasets: [
+                {
+                    label: 'Approved',
+                    data: rows.map(r => r.approved),
+                    backgroundColor: 'rgba(34, 197, 94, 0.7)'
+                },
+                {
+                    label: 'Rejected',
+                    data: rows.map(r => r.rejected),
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)'
+                },
+                {
+                    label: 'Invalid',
+                    data: rows.map(r => r.invalid),
+                    backgroundColor: 'rgba(245, 158, 11, 0.7)'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    ticks: { color: '#cbd5e1' },
+                    grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: '#cbd5e1', precision: 0 },
+                    grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: { color: '#e2e8f0' }
+                }
+            }
+        }
+    });
 }
 
 function loadVendors() {
@@ -212,6 +326,45 @@ saveVendorsBtn.addEventListener('click', () => {
     saveVendors();
 });
 
+downloadReportBtn.addEventListener('click', () => {
+    if (!currentReport) return;
+
+    const reportRows = currentReport.vendorRows.map(row => ({
+        Vendor: row.vendor,
+        Total: row.total,
+        Approved: row.approved,
+        Rejected: row.rejected,
+        Invalid: row.invalid,
+        'Approval %': row.approvalPercentage
+    }));
+
+    const totalsRows = [{
+        'Total Vendors': currentReport.vendorRows.length,
+        'Total Approved': currentReport.totals.approved,
+        'Total Rejected': currentReport.totals.rejected,
+        'Total Invalid': currentReport.totals.invalid
+    }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(reportRows), 'Vendor Summary');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(totalsRows), 'Consolidated');
+
+    const sourceName = (currentReport.sourceFileName || 'report').replace(/\.[^/.]+$/, '');
+    XLSX.writeFile(wb, `${sourceName}-vendor-report.xlsx`);
+});
+
+convertAnotherBtn.addEventListener('click', () => {
+    showWorkflow();
+    selectedFile = null;
+    fileInput.value = '';
+    fileNameDisplay.textContent = 'Click to browse Excel file';
+    fileNameDisplay.classList.remove('text-blue-400', 'font-semibold');
+    convertBtn.disabled = true;
+    convertBtn.classList.add('bg-blue-600/50', 'text-gray-300', 'cursor-not-allowed');
+    convertBtn.classList.remove('bg-blue-600', 'text-white', 'hover:bg-blue-500', 'hover:shadow-neon');
+    showStatus('Ready for a new source file.');
+});
+
 // Initial Render
 loadVendors();
 renderVendors();
@@ -271,13 +424,22 @@ convertBtn.addEventListener('click', async () => {
         }
 
         const headerRow = data[0];
-        let supplierColIdx = headerRow.findIndex(cell => cell && cell.toString().toLowerCase() === 'supplier name');
+        let supplierColIdx = headerRow.findIndex(cell => normalizeHeader(cell) === 'supplier name');
         if (supplierColIdx === -1) {
-            supplierColIdx = headerRow.findIndex(cell => cell && cell.toString().toLowerCase().includes('supplier'));
+            supplierColIdx = headerRow.findIndex(cell => normalizeHeader(cell).includes('supplier'));
         }
 
         if (supplierColIdx === -1) {
             throw new Error('Could not find "Supplier Name" column in Excel header.');
+        }
+
+        let statusColIdx = headerRow.findIndex(cell => normalizeHeader(cell) === 'supplier sample status');
+        if (statusColIdx === -1) {
+            statusColIdx = headerRow.findIndex(cell => normalizeHeader(cell).includes('supplier sample status'));
+        }
+
+        if (statusColIdx === -1) {
+            throw new Error('Could not find "Supplier Sample status" column in Excel header.');
         }
 
         showStatus('Extracting vendor data...');
@@ -285,6 +447,17 @@ convertBtn.addEventListener('click', async () => {
         // 4. Process data into groups
         const splitData = {};
         vendors.forEach(v => { splitData[v.display] = [headerRow]; });
+        const reportMap = {};
+        vendors.forEach(v => {
+            reportMap[v.display] = {
+                vendor: v.display,
+                total: 0,
+                approved: 0,
+                rejected: 0,
+                invalid: 0,
+                approvalPercentage: 0
+            };
+        });
 
         const exactMap = {};
         vendors.forEach(v => { exactMap[v.exact.toLowerCase()] = v.display; });
@@ -299,6 +472,9 @@ convertBtn.addEventListener('click', async () => {
                 const matchedDisplay = exactMap[cleanVal];
                 if (matchedDisplay) {
                     splitData[matchedDisplay].push(row);
+                    const normalized = normalizeStatus(row[statusColIdx]);
+                    reportMap[matchedDisplay].total += 1;
+                    reportMap[matchedDisplay][normalized] += 1;
                     matchCount++;
                 }
             }
@@ -329,6 +505,21 @@ convertBtn.addEventListener('click', async () => {
             throw new Error('No matching vendor data found in the sheet.');
         }
 
+        const vendorRows = Object.values(reportMap)
+            .filter(row => row.total > 0)
+            .map(row => ({
+                ...row,
+                approvalPercentage: ((row.approved / row.total) * 100).toFixed(1)
+            }))
+            .sort((a, b) => b.total - a.total);
+
+        const totals = vendorRows.reduce((acc, row) => {
+            acc.approved += row.approved;
+            acc.rejected += row.rejected;
+            acc.invalid += row.invalid;
+            return acc;
+        }, { approved: 0, rejected: 0, invalid: 0 });
+
         // 6. Write Data (Native file system or Fallback)
         showStatus('Finalizing Download...');
         const zipContent = await zip.generateAsync({ type: "blob" });
@@ -353,6 +544,11 @@ convertBtn.addEventListener('click', async () => {
         showStatus(`Success! Downloaded ${filesCreated} files in ZIP.`);
         convertBtn.disabled = false;
         convertBtn.innerHTML = originalText;
+        showDashboard({
+            sourceFileName: selectedFile.name,
+            vendorRows,
+            totals
+        });
 
     } catch (err) {
         if (err.name === 'AbortError') {

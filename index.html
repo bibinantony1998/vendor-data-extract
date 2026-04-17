@@ -30,6 +30,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- FileSaver to save the zip file -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <!-- Chart.js for dashboard graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
@@ -76,7 +78,7 @@
             <p class="text-gray-400 text-lg">Easily split your master PLM sheet into vendor-specific files automatically</p>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8" id="workflowScreen">
             
             <!-- Left Column: File interaction -->
             <div class="glass-panel p-6 shadow-glass flex flex-col space-y-6 fade-in" style="animation-delay: 0.1s;">
@@ -137,6 +139,68 @@
             </div>
             
         </div>
+
+        <section id="dashboardScreen" class="hidden glass-panel p-6 md:p-8 shadow-glass space-y-6 fade-in">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-semibold flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6a2 2 0 012-2h6m-6 8h6m-9 4h10a2 2 0 002-2V7a2 2 0 00-2-2H8a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Conversion Report Dashboard
+                    </h2>
+                    <p class="text-sm text-gray-400 mt-1">Vendor approval summary from Supplier Sample status</p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <button id="downloadReportBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold transition-colors">
+                        Download Excel Report
+                    </button>
+                    <button id="convertAnotherBtn" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors">
+                        Convert Another File
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div class="bg-slate-800/70 border border-slate-600/50 rounded-lg p-4">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Total Vendors</p>
+                    <p id="summaryVendors" class="text-2xl font-bold text-white mt-1">0</p>
+                </div>
+                <div class="bg-slate-800/70 border border-slate-600/50 rounded-lg p-4">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Approvals</p>
+                    <p id="summaryApproved" class="text-2xl font-bold text-green-400 mt-1">0</p>
+                </div>
+                <div class="bg-slate-800/70 border border-slate-600/50 rounded-lg p-4">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Rejections</p>
+                    <p id="summaryRejected" class="text-2xl font-bold text-red-400 mt-1">0</p>
+                </div>
+                <div class="bg-slate-800/70 border border-slate-600/50 rounded-lg p-4">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Invalid Status</p>
+                    <p id="summaryInvalid" class="text-2xl font-bold text-amber-400 mt-1">0</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4">
+                <canvas id="reportChart" height="180"></canvas>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-slate-700/50">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-slate-900/70 text-gray-300">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-semibold">Vendor</th>
+                            <th class="px-4 py-3 text-left font-semibold">Total</th>
+                            <th class="px-4 py-3 text-left font-semibold">Approval</th>
+                            <th class="px-4 py-3 text-left font-semibold">Rejection</th>
+                            <th class="px-4 py-3 text-left font-semibold">Invalid</th>
+                            <th class="px-4 py-3 text-left font-semibold">Approval %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportTableBody" class="divide-y divide-slate-700/50 bg-slate-800/30">
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </div>
 
     <script src="script.js"></script>
