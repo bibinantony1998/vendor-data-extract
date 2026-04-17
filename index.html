@@ -106,12 +106,14 @@
 
             <!-- Right Column: Vendor Management -->
             <div class="glass-panel p-6 shadow-glass flex flex-col fade-in" style="animation-delay: 0.2s;">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-semibold flex items-center gap-2">
+                <div class="mb-6">
+                    <div class="flex items-center justify-between gap-3">
+                        <h2 class="text-2xl font-semibold flex items-center gap-2 whitespace-nowrap">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
                         2. Manage Vendors
-                    </h2>
-                    <span class="text-xs bg-gray-700 text-gray-300 px-3 py-1 rounded-full"><span id="vendorCount">0</span> configured</span>
+                        </h2>
+                        <span class="text-sm bg-gray-800/80 border border-gray-600/60 text-gray-200 px-4 py-1.5 rounded-full"><span id="vendorCount">0</span> configured</span>
+                    </div>
                 </div>
                 
                 <div class="flex-1 overflow-y-auto max-h-[350px] pr-2 space-y-3" id="vendorListContainer">
@@ -119,14 +121,17 @@
                 </div>
 
                 <div class="mt-6 pt-5 border-t border-gray-700/50 space-y-3">
-                    <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Add New Vendor</h3>
+                    <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wider">Add New Vendor</h3>
                     <div class="flex flex-col md:flex-row gap-3">
-                        <input type="text" id="newDisplay" placeholder="Display Name (e.g. ASN)" class="flex-1 bg-gray-900/50 border border-gray-600 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
-                        <input type="text" id="newExact" placeholder="Exact Excel Match" class="flex-1 bg-gray-900/50 border border-gray-600 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
-                        <button id="addVendorBtn" class="bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg transition-colors" title="Add Vendor">
+                        <input type="text" id="newDisplay" placeholder="Display Name (e.g. ASN)" class="flex-1 bg-slate-800/90 border border-gray-500/60 rounded-lg px-4 py-2.5 text-sm text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
+                        <input type="text" id="newExact" placeholder="Exact Excel Match" class="flex-1 bg-slate-800/90 border border-gray-500/60 rounded-lg px-4 py-2.5 text-sm text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
+                        <button id="addVendorBtn" class="bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-lg transition-colors border border-gray-500/40" title="Add Vendor">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
                         </button>
                     </div>
+                    <button id="saveVendorsBtn" class="hidden w-full text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg transition-colors shadow-neon" title="Save vendors to local storage">
+                        Save Vendors
+                    </button>
                 </div>
 
             </div>

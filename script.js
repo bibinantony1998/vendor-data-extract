@@ -1,5 +1,7 @@
+const STORAGE_KEY = 'vendorDataExtractor.vendors';
+
 // Initial default vendors mapping
-let vendors = [
+const defaultVendors = [
     { id: '1', display: 'Anubhav Apparels Private Limited', exact: 'ANUBHAV APPARELS PVT. LTD.' },
     { id: '2', display: 'Cotton Blossom (India) Private Limited', exact: 'COTTON BLOSSOM (INDIA) PRIVATE LIMITED' },
     { id: '3', display: 'ASN', exact: 'ASN GLOBAL FZC' },
@@ -8,6 +10,8 @@ let vendors = [
     { id: '6', display: 'D & J Trading Co.Ltd.', exact: 'D & J TRADING CO.LTD.' }
 ];
 
+let vendors = [...defaultVendors];
+
 // DOM Elements
 const fileInput = document.getElementById('excelFile');
 const fileNameDisplay = document.getElementById('fileNameDisplay');
@@ -15,11 +19,17 @@ const convertBtn = document.getElementById('convertBtn');
 const vendorListContainer = document.getElementById('vendorListContainer');
 const vendorCount = document.getElementById('vendorCount');
 const addVendorBtn = document.getElementById('addVendorBtn');
+const saveVendorsBtn = document.getElementById('saveVendorsBtn');
 const newDisplayInput = document.getElementById('newDisplay');
 const newExactInput = document.getElementById('newExact');
 const statusMessage = document.getElementById('statusMessage');
 
 let selectedFile = null;
+let editingVendorId = null;
+let savedVendorsSnapshot = '';
+
+const plusIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>`;
+const tickIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.75-3.75a1 1 0 111.414-1.414l3.043 3.043 6.543-6.543a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>`;
 
 // File Input Handler
 fileInput.addEventListener('change', (e) => {
@@ -45,6 +55,65 @@ function showStatus(message, isError = false) {
     }
 }
 
+function saveVendors(showMessage = true) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(vendors));
+    savedVendorsSnapshot = getVendorsSnapshot(vendors);
+    updateSaveButtonVisibility();
+    if (showMessage) {
+        showStatus('Vendors saved to local storage.');
+    }
+}
+
+function getVendorsSnapshot(list) {
+    return JSON.stringify((list || []).map(v => ({
+        id: String(v.id || '').trim(),
+        display: String(v.display || '').trim(),
+        exact: String(v.exact || '').trim()
+    })));
+}
+
+function updateSaveButtonVisibility() {
+    const hasChanges = hasUnsavedVendorChanges();
+    saveVendorsBtn.classList.toggle('hidden', !hasChanges);
+}
+
+function hasUnsavedVendorChanges() {
+    return getVendorsSnapshot(vendors) !== savedVendorsSnapshot;
+}
+
+function setAddButtonMode(isEditing) {
+    addVendorBtn.innerHTML = isEditing ? tickIcon : plusIcon;
+    addVendorBtn.title = isEditing ? 'Update Vendor' : 'Add Vendor';
+}
+
+function loadVendors() {
+    const savedVendors = localStorage.getItem(STORAGE_KEY);
+    if (!savedVendors) {
+        savedVendorsSnapshot = getVendorsSnapshot(vendors);
+        updateSaveButtonVisibility();
+        return;
+    }
+
+    try {
+        const parsed = JSON.parse(savedVendors);
+        if (Array.isArray(parsed)) {
+            vendors = parsed.filter(v => v && v.id && v.display && v.exact);
+        }
+    } catch (error) {
+        console.error('Unable to parse saved vendors:', error);
+    } finally {
+        savedVendorsSnapshot = getVendorsSnapshot(vendors);
+        updateSaveButtonVisibility();
+    }
+}
+
+function resetVendorForm() {
+    editingVendorId = null;
+    newDisplayInput.value = '';
+    newExactInput.value = '';
+    setAddButtonMode(false);
+}
+
 // Vendor Management Handlers
 function renderVendors() {
     vendorListContainer.innerHTML = '';
@@ -52,16 +121,21 @@ function renderVendors() {
 
     vendors.forEach(v => {
         const vendorEl = document.createElement('div');
-        vendorEl.className = 'group flex items-center justify-between bg-gray-800/50 border border-gray-700/50 p-3 rounded-lg hover:border-gray-600 transition-colors';
+        vendorEl.className = 'group flex items-center justify-between bg-slate-800/80 border border-slate-600/50 p-4 rounded-xl hover:border-blue-500/50 transition-colors';
         
         vendorEl.innerHTML = `
             <div class="flex-1 min-w-0 pr-4">
-                <div class="font-medium text-sm truncate" title="${v.display}">${v.display}</div>
-                <div class="text-xs text-gray-500 truncate" title="${v.exact}">Match: ${v.exact}</div>
+                <div class="font-semibold text-base text-gray-100 truncate" title="${v.display}">${v.display}</div>
+                <div class="text-sm text-gray-300 truncate" title="${v.exact}">Match: ${v.exact}</div>
             </div>
             <div class="flex gap-2">
-                <button onclick="deleteVendor('${v.id}')" class="text-gray-500 hover:text-red-400 transition-colors" title="Delete">
+                <button onclick="deleteVendor('${v.id}')" class="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-600/60 text-gray-300 hover:text-red-300 hover:border-red-400/60 hover:bg-red-500/10 transition-colors" title="Delete">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                </button>
+                <button onclick="editVendor('${v.id}')" class="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-600/60 text-gray-300 hover:text-blue-300 hover:border-blue-400/60 hover:bg-blue-500/10 transition-colors" title="Edit">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
                 </button>
             </div>
         `;
@@ -71,26 +145,75 @@ function renderVendors() {
 
 window.deleteVendor = (id) => {
     vendors = vendors.filter(v => v.id !== id);
+    if (editingVendorId === id) {
+        resetVendorForm();
+    }
+    updateSaveButtonVisibility();
+    showStatus('Vendor deleted. Click Save Vendors to persist.');
     renderVendors();
+};
+
+window.editVendor = (id) => {
+    const vendor = vendors.find(v => v.id === id);
+    if (!vendor) return;
+
+    editingVendorId = id;
+    newDisplayInput.value = vendor.display;
+    newExactInput.value = vendor.exact;
+    setAddButtonMode(true);
+    newDisplayInput.focus();
+    showStatus('Editing vendor. Update fields and click tick to apply.');
 };
 
 addVendorBtn.addEventListener('click', () => {
     const display = newDisplayInput.value.trim();
     const exact = newExactInput.value.trim();
-    
-    if (display && exact) {
-        vendors.push({
-            id: Date.now().toString(),
-            display,
-            exact
-        });
-        newDisplayInput.value = '';
-        newExactInput.value = '';
+
+    if (!display || !exact) {
+        showStatus('Display and exact match are required.', true);
+        return;
+    }
+
+    if (editingVendorId) {
+        const vendorToUpdate = vendors.find(v => v.id === editingVendorId);
+        if (!vendorToUpdate) {
+            showStatus('Vendor not found for update.', true);
+            resetVendorForm();
+            return;
+        }
+
+        vendorToUpdate.display = display;
+        vendorToUpdate.exact = exact;
+        updateSaveButtonVisibility();
+        showStatus('Vendor updated. Click Save Vendors to persist.');
+        resetVendorForm();
         renderVendors();
+        return;
+    }
+
+    vendors.push({
+        id: Date.now().toString(),
+        display,
+        exact
+    });
+    resetVendorForm();
+    updateSaveButtonVisibility();
+    showStatus('Vendor added. Click Save Vendors to persist.');
+    renderVendors();
+});
+
+newExactInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        addVendorBtn.click();
     }
 });
 
+saveVendorsBtn.addEventListener('click', () => {
+    saveVendors();
+});
+
 // Initial Render
+loadVendors();
 renderVendors();
 
 
@@ -99,6 +222,11 @@ convertBtn.addEventListener('click', async () => {
     if (!selectedFile) return;
 
     try {
+        if (hasUnsavedVendorChanges()) {
+            saveVendors(false);
+            showStatus('Vendor list auto-saved before conversion.');
+        }
+
         // Extract "Month" from original filename
         let monthName = "march";
         const monthMatch = selectedFile.name.toLowerCase().match(/(january|february|march|april|may|june|july|august|september|october|november|december)/);
