@@ -326,31 +326,81 @@ saveVendorsBtn.addEventListener('click', () => {
     saveVendors();
 });
 
-downloadReportBtn.addEventListener('click', () => {
+downloadReportBtn.addEventListener('click', async () => {
     if (!currentReport) return;
 
-    const reportRows = currentReport.vendorRows.map(row => ({
-        Vendor: row.vendor,
-        Total: row.total,
-        Approved: row.approved,
-        Rejected: row.rejected,
-        Invalid: row.invalid,
-        'Approval %': row.approvalPercentage
-    }));
+    try {
+        const reportRows = [
+            ['Vendor', 'Total', 'Approved', 'Rejected', 'Invalid', 'Approval %'],
+            ...currentReport.vendorRows.map(row => ([
+                row.vendor,
+                row.total,
+                row.approved,
+                row.rejected,
+                row.invalid,
+                Number(row.approvalPercentage)
+            ]))
+        ];
 
-    const totalsRows = [{
-        'Total Vendors': currentReport.vendorRows.length,
-        'Total Approved': currentReport.totals.approved,
-        'Total Rejected': currentReport.totals.rejected,
-        'Total Invalid': currentReport.totals.invalid
-    }];
+        const totalsRows = [
+            ['Total Vendors', 'Total Approved', 'Total Rejected', 'Total Invalid'],
+            [
+                currentReport.vendorRows.length,
+                currentReport.totals.approved,
+                currentReport.totals.rejected,
+                currentReport.totals.invalid
+            ]
+        ];
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(reportRows), 'Vendor Summary');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(totalsRows), 'Consolidated');
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(reportRows), 'Vendor Summary');
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(totalsRows), 'Consolidated');
 
-    const sourceName = (currentReport.sourceFileName || 'report').replace(/\.[^/.]+$/, '');
-    XLSX.writeFile(wb, `${sourceName}-vendor-report.xlsx`);
+        const sourceName = (currentReport.sourceFileName || 'report').replace(/\.[^/.]+$/, '');
+        const fileName = `${sourceName}-vendor-report.xlsx`;
+        const excelBuffer = XLSX.write(wb, {
+            bookType: 'xlsx',
+            type: 'array',
+            bookSST: true,
+            compression: true
+        });
+        const excelBlob = new Blob([excelBuffer], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+
+        if (window.showSaveFilePicker) {
+            const fileHandle = await window.showSaveFilePicker({
+                suggestedName: fileName,
+                types: [{
+                    description: 'Excel Workbook',
+                    accept: {
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
+                    }
+                }]
+            });
+
+            const writable = await fileHandle.createWritable();
+            await writable.write(excelBlob);
+            await writable.close();
+        } else {
+            const url = URL.createObjectURL(excelBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        showStatus('Report downloaded successfully.');
+    } catch (err) {
+        if (err.name === 'AbortError') {
+            showStatus('Report download cancelled by user.');
+        } else {
+            showStatus('Failed to download report.', true);
+        }
+    }
 });
 
 convertAnotherBtn.addEventListener('click', () => {

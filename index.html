@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,7 +33,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <!-- Chart.js for dashboard graph -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
@@ -41,10 +42,10 @@
             background-color: theme('colors.darker');
             color: white;
             min-height: 100vh;
-            background-image: 
-                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-                radial-gradient(at 50% 0%, hsla(225,39%,15%,1) 0, transparent 50%), 
-                radial-gradient(at 100% 0%, hsla(339,26%,11%,1) 0, transparent 50%);
+            background-image:
+                radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+                radial-gradient(at 50% 0%, hsla(225, 39%, 15%, 1) 0, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(339, 26%, 11%, 1) 0, transparent 50%);
             background-attachment: fixed;
         }
 
@@ -57,41 +58,79 @@
         }
 
         /* Custom Scrollbar for Vendor List */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.5); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(59, 130, 246, 0.8); }
-        
-        .fade-in { animation: fadeIn 0.4s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.5);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(59, 130, 246, 0.8);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 </head>
+
 <body class="p-6 md:p-12">
 
     <div class="max-w-5xl mx-auto space-y-8">
-        
+
         <!-- Header section -->
         <header class="text-center space-y-2 fade-in">
-            <h1 class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 pb-2">
+            <h1
+                class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 pb-2">
                 Vendor Data Extractor
             </h1>
-            <p class="text-gray-400 text-lg">Easily split your master PLM sheet into vendor-specific files automatically</p>
+            <p class="text-gray-400 text-lg">Easily split your master PLM sheet into vendor-specific files automatically
+            </p>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8" id="workflowScreen">
-            
+
             <!-- Left Column: File interaction -->
             <div class="glass-panel p-6 shadow-glass flex flex-col space-y-6 fade-in" style="animation-delay: 0.1s;">
                 <h2 class="text-2xl font-semibold flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
                     1. Upload & Extract
                 </h2>
-                
-                <div class="border-2 border-dashed border-gray-600 rounded-xl p-8 text-center hover:border-blue-500 transition-colors bg-gray-800/30 group">
+
+                <div
+                    class="border-2 border-dashed border-gray-600 rounded-xl p-8 text-center hover:border-blue-500 transition-colors bg-gray-800/30 group">
                     <input type="file" id="excelFile" accept=".xlsx, .xls" class="hidden" />
-                    <label for="excelFile" class="cursor-pointer flex flex-col items-center justify-center h-full w-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-500 group-hover:text-blue-400 transition-colors mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <label for="excelFile"
+                        class="cursor-pointer flex flex-col items-center justify-center h-full w-full">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                            class="h-12 w-12 text-gray-500 group-hover:text-blue-400 transition-colors mb-3" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         <span class="text-lg font-medium" id="fileNameDisplay">Click to browse Excel file</span>
                         <span class="text-sm text-gray-500 mt-1">Accepts .xlsx format</span>
@@ -99,10 +138,13 @@
                 </div>
 
                 <div class="pt-2">
-                    <button id="convertBtn" disabled class="w-full py-4 rounded-xl font-bold text-lg bg-blue-600/50 text-gray-300 cursor-not-allowed transition-all duration-300 shadow-neon flex justify-center items-center gap-2">
+                    <button id="convertBtn" disabled
+                        class="w-full py-4 rounded-xl font-bold text-lg bg-blue-600/50 text-gray-300 cursor-not-allowed transition-all duration-300 shadow-neon flex justify-center items-center gap-2">
                         <span>Extract to ZIP</span>
                     </button>
-                    <div id="statusMessage" class="h-6 mt-3 text-center text-sm font-medium text-blue-300 opacity-0 transition-opacity"></div>
+                    <div id="statusMessage"
+                        class="h-6 mt-3 text-center text-sm font-medium text-blue-300 opacity-0 transition-opacity">
+                    </div>
                 </div>
             </div>
 
@@ -111,13 +153,19 @@
                 <div class="mb-6">
                     <div class="flex items-center justify-between gap-3">
                         <h2 class="text-2xl font-semibold flex items-center gap-2 whitespace-nowrap">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                        2. Manage Vendors
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                            2. Manage Vendors
                         </h2>
-                        <span class="text-sm bg-gray-800/80 border border-gray-600/60 text-gray-200 px-4 py-1.5 rounded-full"><span id="vendorCount">0</span> configured</span>
+                        <span
+                            class="text-sm bg-gray-800/80 border border-gray-600/60 text-gray-200 px-4 py-1.5 rounded-full"><span
+                                id="vendorCount">0</span> configured</span>
                     </div>
                 </div>
-                
+
                 <div class="flex-1 overflow-y-auto max-h-[350px] pr-2 space-y-3" id="vendorListContainer">
                     <!-- Vendor items will be rendered here via JS -->
                 </div>
@@ -125,37 +173,52 @@
                 <div class="mt-6 pt-5 border-t border-gray-700/50 space-y-3">
                     <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wider">Add New Vendor</h3>
                     <div class="flex flex-col md:flex-row gap-3">
-                        <input type="text" id="newDisplay" placeholder="Display Name (e.g. ASN)" class="flex-1 bg-slate-800/90 border border-gray-500/60 rounded-lg px-4 py-2.5 text-sm text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
-                        <input type="text" id="newExact" placeholder="Exact Excel Match" class="flex-1 bg-slate-800/90 border border-gray-500/60 rounded-lg px-4 py-2.5 text-sm text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
-                        <button id="addVendorBtn" class="bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-lg transition-colors border border-gray-500/40" title="Add Vendor">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                        <input type="text" id="newDisplay" placeholder="Display Name (e.g. ASN)"
+                            class="flex-1 bg-slate-800/90 border border-gray-500/60 rounded-lg px-4 py-2.5 text-sm text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
+                        <input type="text" id="newExact" placeholder="Exact Excel Match"
+                            class="flex-1 bg-slate-800/90 border border-gray-500/60 rounded-lg px-4 py-2.5 text-sm text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
+                        <button id="addVendorBtn"
+                            class="bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-lg transition-colors border border-gray-500/40"
+                            title="Add Vendor">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                fill="currentColor">
+                                <path fill-rule="evenodd"
+                                    d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                                    clip-rule="evenodd" />
+                            </svg>
                         </button>
                     </div>
-                    <button id="saveVendorsBtn" class="hidden w-full text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg transition-colors shadow-neon" title="Save vendors to local storage">
+                    <button id="saveVendorsBtn"
+                        class="hidden w-full text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg transition-colors shadow-neon"
+                        title="Save vendors to local storage">
                         Save Vendors
                     </button>
                 </div>
 
             </div>
-            
+
         </div>
 
         <section id="dashboardScreen" class="hidden glass-panel p-6 md:p-8 shadow-glass space-y-6 fade-in">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <h2 class="text-2xl font-semibold flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6a2 2 0 012-2h6m-6 8h6m-9 4h10a2 2 0 002-2V7a2 2 0 00-2-2H8a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-400" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 17v-6a2 2 0 012-2h6m-6 8h6m-9 4h10a2 2 0 002-2V7a2 2 0 00-2-2H8a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         Conversion Report Dashboard
                     </h2>
                     <p class="text-sm text-gray-400 mt-1">Vendor approval summary from Supplier Sample status</p>
                 </div>
                 <div class="flex flex-wrap gap-3">
-                    <button id="downloadReportBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold transition-colors">
+                    <button id="downloadReportBtn"
+                        class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold transition-colors">
                         Download Excel Report
                     </button>
-                    <button id="convertAnotherBtn" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors">
+                    <button id="convertAnotherBtn"
+                        class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors">
                         Convert Another File
                     </button>
                 </div>
@@ -181,7 +244,7 @@
             </div>
 
             <div class="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4">
-                <canvas id="reportChart" height="180"></canvas>
+                <canvas id="reportChart" height="280"></canvas>
             </div>
 
             <div class="overflow-x-auto rounded-xl border border-slate-700/50">
@@ -205,4 +268,5 @@
 
     <script src="script.js"></script>
 </body>
+
 </html>
