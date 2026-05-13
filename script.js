@@ -534,7 +534,10 @@ convertBtn.addEventListener('click', async () => {
         const buffer = await selectedFile.arrayBuffer();
         const workbook = XLSX.read(buffer, { type: 'array' });
         
-        const sheetName = workbook.SheetNames.includes('PLM data') ? 'PLM data' : workbook.SheetNames[0];
+        const plmSheetName = workbook.SheetNames.find(name =>
+            String(name).toLowerCase().includes('plm data')
+        );
+        const sheetName = plmSheetName ?? workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         
         // 3. Convert to 2D Array
