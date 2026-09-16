@@ -501,11 +501,17 @@ convertBtn.addEventListener('click', async () => {
             showStatus('Vendor list auto-saved before conversion.');
         }
 
-        // Extract "Month" from original filename
-        let monthName = "march";
-        const monthMatch = selectedFile.name.toLowerCase().match(/(january|february|march|april|may|june|july|august|september|october|november|december)/);
+        // Extract "Month" from original filename (supports full & 3-letter abbreviations, any case)
+        let monthName = "";
+        const monthAbbrevMap = {
+            jan: "january", feb: "february", mar: "march", apr: "april",
+            may: "may",     jun: "june",     jul: "july",  aug: "august",
+            sep: "september", oct: "october", nov: "november", dec: "december"
+        };
+        const monthMatch = selectedFile.name.match(/\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i);
         if (monthMatch) {
-            monthName = monthMatch[1];
+            const key = monthMatch[1].substring(0, 3).toLowerCase();
+            monthName = monthAbbrevMap[key];
         }
 
         let fileHandle = null;
