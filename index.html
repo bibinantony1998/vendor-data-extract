@@ -276,6 +276,28 @@
         </section>
     </div>
 
+    <!-- Sheet Picker Modal (shown only when PLM Data not found & multiple sheets exist) -->
+    <div id="sheetPickerOverlay"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center"
+        style="background: rgba(2, 6, 23, 0.75); backdrop-filter: blur(6px);">
+        <div class="glass-panel p-8 w-full max-w-md mx-4 space-y-5 fade-in shadow-neon">
+            <div class="flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6a2 2 0 012-2h6m-6 8h6M3 7h4m-4 4h4m-4 4h4" />
+                </svg>
+                <div>
+                    <h3 class="text-lg font-semibold text-white">Select a Sheet</h3>
+                    <p class="text-sm text-gray-400 mt-0.5">No <span class="text-blue-300 font-medium">PLM Data</span> sheet found. Pick which sheet to use.</p>
+                </div>
+            </div>
+            <div id="sheetPickerList" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
+            <button id="sheetPickerCancel"
+                class="w-full py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white border border-gray-600/50 hover:border-gray-400/50 transition-all">
+                Cancel
+            </button>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 

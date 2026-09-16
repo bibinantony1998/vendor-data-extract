@@ -491,6 +491,58 @@ loadVendors();
 renderVendors();
 
 
+/**
+ * Resolves which sheet to use from the workbook.
+ * - If a sheet named "PLM Data" (case-insensitive) exists → use it silently.
+ * - If only one sheet exists → use it silently.
+ * - Otherwise → show the sheet picker modal and await the user's choice.
+ */
+function pickSheet(workbook) {
+    // 1. Try to find "PLM Data" sheet (case-insensitive)
+    const plmSheet = workbook.SheetNames.find(n =>
+        String(n).toLowerCase().includes('plm data')
+    );
+    if (plmSheet) return Promise.resolve(plmSheet);
+
+    // 2. Only one sheet — no need to ask
+    if (workbook.SheetNames.length === 1) return Promise.resolve(workbook.SheetNames[0]);
+
+    // 3. Multiple sheets, no PLM Data — show modal
+    return new Promise((resolve, reject) => {
+        const overlay = document.getElementById('sheetPickerOverlay');
+        const list    = document.getElementById('sheetPickerList');
+        const cancel  = document.getElementById('sheetPickerCancel');
+
+        // Build sheet buttons
+        list.innerHTML = '';
+        workbook.SheetNames.forEach(name => {
+            const btn = document.createElement('button');
+            btn.textContent = name;
+            btn.className = [
+                'w-full text-left px-4 py-3 rounded-lg text-sm font-medium',
+                'bg-slate-800/60 hover:bg-blue-600/30 border border-gray-600/40',
+                'hover:border-blue-500/60 text-gray-200 hover:text-white',
+                'transition-all duration-150'
+            ].join(' ');
+            btn.addEventListener('click', () => {
+                overlay.classList.add('hidden');
+                resolve(name);
+            });
+            list.appendChild(btn);
+        });
+
+        // Cancel closes without resolving (aborts conversion)
+        const onCancel = () => {
+            overlay.classList.add('hidden');
+            cancel.removeEventListener('click', onCancel);
+            reject(new Error('Sheet selection cancelled.'));
+        };
+        cancel.addEventListener('click', onCancel);
+
+        overlay.classList.remove('hidden');
+    });
+}
+
 // Core Conversion Logic
 convertBtn.addEventListener('click', async () => {
     if (!selectedFile) return;
@@ -514,10 +566,25 @@ convertBtn.addEventListener('click', async () => {
             monthName = monthAbbrevMap[key];
         }
 
+        convertBtn.disabled = true;
+        const originalText = convertBtn.innerHTML;
+        convertBtn.innerHTML = `
+            <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            Processing...
+        `;
+
+        // 1. Read the Excel File
+        showStatus('Reading Excel file...');
+        const buffer = await selectedFile.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: 'array' });
+
+        // 2. Pick sheet (shows modal only when PLM Data not found + multiple sheets)
+        const sheetName = await pickSheet(workbook);
+        const worksheet = workbook.Sheets[sheetName];
+
         let fileHandle = null;
 
-        // 1. Ask for file save location IMMEDIATELY (requires user gesture)
-        // This permanently fixes Chrome/Safari renaming security blocks
+        // 3. Ask for file save location (requires user gesture — still within click handler chain)
         if (window.showSaveFilePicker) {
             fileHandle = await window.showSaveFilePicker({
                 suggestedName: `${monthName}-vendor-extracts.zip`,
@@ -528,23 +595,7 @@ convertBtn.addEventListener('click', async () => {
             });
         }
 
-        convertBtn.disabled = true;
-        const originalText = convertBtn.innerHTML;
-        convertBtn.innerHTML = `
-            <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-            Processing...
-        `;
-        showStatus('Reading Excel file...');
 
-        // 2. Read the Excel File
-        const buffer = await selectedFile.arrayBuffer();
-        const workbook = XLSX.read(buffer, { type: 'array' });
-        
-        const plmSheetName = workbook.SheetNames.find(name =>
-            String(name).toLowerCase().includes('plm data')
-        );
-        const sheetName = plmSheetName ?? workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
         
         // 3. Convert to 2D Array
         const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
